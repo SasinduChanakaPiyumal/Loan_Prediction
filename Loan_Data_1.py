@@ -303,7 +303,7 @@ y = df_encorded['Loan_Status'].values
 # In[38]:
 
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 
 
 # In[39]:
