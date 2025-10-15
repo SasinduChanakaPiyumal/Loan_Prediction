@@ -18,7 +18,19 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-data = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+# Try to read from local directory first, with error handling
+try:
+    data = pd.read_csv('loan_data_set.csv')
+except FileNotFoundError:
+    print("Error: 'loan_data_set.csv' not found in current directory.")
+    print("Please ensure the file exists in the same directory as this script.")
+    raise
+except pd.errors.ParserError:
+    print("Error: Unable to parse the CSV file. The file may be corrupted.")
+    raise
+except PermissionError:
+    print("Error: Permission denied when trying to read the file.")
+    raise
 
 
 # In[6]:
@@ -133,10 +145,12 @@ df.isnull().sum()
 
 category_col = ['Gender','Married','Education','Self_Employed','Property_Area']
 
+# Store mode values in a dictionary instead of using globals()
+mode_values = {}
 for column in category_col:
-    globals()[f'mode_{column}'] = df[column].mode()[0]
-    df[column].fillna(globals()[f'mode_{column}'], inplace=True)
-    print(f"Mode of {column} :",globals()[f'mode_{column}'])
+    mode_values[column] = df[column].mode()[0]
+    df[column].fillna(mode_values[column], inplace=True)
+    print(f"Mode of {column} :", mode_values[column])
 
 
 # In[19]:
@@ -164,10 +178,11 @@ df['Loan_Amount_Term'].value_counts()
 
 numeric_category_col = ['Credit_History','Loan_Amount_Term']
 
+# Store mode values in a dictionary instead of using globals()
 for column in numeric_category_col:
-    globals()[f'mode_{column}'] = df[column].mode()[0]
-    df[column].fillna(globals()[f'mode_{column}'], inplace=True)
-    print(f"Mode of {column} :",globals()[f'mode_{column}'])
+    mode_values[column] = df[column].mode()[0]
+    df[column].fillna(mode_values[column], inplace=True)
+    print(f"Mode of {column} :", mode_values[column])
 
 
 # In[23]:
@@ -391,7 +406,8 @@ def model_acc(model):
 
 
 from sklearn.linear_model import LogisticRegression
-lo = LogisticRegression()
+# Tuned hyperparameters: increased max_iter for convergence, adjusted C for regularization
+lo = LogisticRegression(C=10.0, max_iter=200, solver='lbfgs', random_state=42)
 model_acc(lo)
 
 
@@ -401,7 +417,8 @@ model_acc(lo)
 
 
 from sklearn.tree import DecisionTreeClassifier
-dt = DecisionTreeClassifier()
+# Tuned hyperparameters: limit max_depth to prevent overfitting, set min_samples_split
+dt = DecisionTreeClassifier(max_depth=8, min_samples_split=10, min_samples_leaf=4, random_state=42)
 model_acc(dt)
 
 
@@ -411,7 +428,8 @@ model_acc(dt)
 
 
 from sklearn.ensemble import RandomForestClassifier
-rf = RandomForestClassifier()
+# Tuned hyperparameters: increased n_estimators, limited max_depth, adjusted min_samples_split
+rf = RandomForestClassifier(n_estimators=200, max_depth=15, min_samples_split=10, max_features='sqrt', random_state=42)
 model_acc(rf)
 
 
@@ -423,29 +441,50 @@ model_acc(rf)
 
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Define models with tuned hyperparameters
 models = [
-    ('Logistic Regression', LogisticRegression()),
-    ('Decision Tree', DecisionTreeClassifier()),
-    ('Random Forest', RandomForestClassifier())
+    ('Logistic Regression', LogisticRegression(C=10.0, max_iter=200, solver='lbfgs', random_state=42)),
+    ('Decision Tree', DecisionTreeClassifier(max_depth=8, min_samples_split=10, min_samples_leaf=4, random_state=42)),
+    ('Random Forest', RandomForestClassifier(n_estimators=200, max_depth=15, min_samples_split=10, max_features='sqrt', random_state=42))
 ]
 
-for model_name, model in models:
+# Refactored function to train and evaluate models on different datasets
+def train_and_evaluate_models(models, x_train_data, x_test_data, y_train, y_test, data_type_name):
+    """
+    Train and evaluate multiple models on given training and test data.
     
-    model.fit(x_train_pca,y_train)
+    Parameters:
+    - models: List of tuples (model_name, model_instance)
+    - x_train_data: Training features
+    - x_test_data: Test features
+    - y_train: Training labels
+    - y_test: Test labels
+    - data_type_name: Description of the data type (e.g., 'PCA', 'Scaled', 'Raw')
+    """
+    print(f"\n{'='*80}")
+    print(f"Training and Evaluation Results for {data_type_name} Data")
+    print(f"{'='*80}\n")
     
-    y_train_pred = model.predict(x_train_pca)
-    y_test_pred = model.predict(x_test_pca)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+    for model_name, model in models:
+        model.fit(x_train_data, y_train)
+        
+        y_train_pred = model.predict(x_train_data)
+        y_test_pred = model.predict(x_test_data)
+        
+        train_accuracy = accuracy_score(y_train, y_train_pred)
+        test_accuracy = accuracy_score(y_test, y_test_pred)
+        conf_matrix = confusion_matrix(y_test, y_test_pred)
+        class_report = classification_report(y_test, y_test_pred)
+        
+        print(model_name)
+        print('Train_accuracy :', train_accuracy)
+        print('Test_accuracy :\n', test_accuracy)
+        print('Confusion_matrix :\n', conf_matrix)
+        print('Classification_report :\n', class_report)
+
+# Train and evaluate on PCA-transformed data
+train_and_evaluate_models(models, x_train_pca, x_test_pca, y_train, y_test, 'PCA-Transformed')
 
 
 # ### Train Model, Predict, and Calculating Model Accuracy for scaled data (without PCA transformed)
@@ -453,23 +492,8 @@ for model_name, model in models:
 # In[50]:
 
 
-for model_name, model in models:
-    
-    model.fit(x_train_scaled,y_train)
-    
-    y_train_pred = model.predict(x_train_scaled)
-    y_test_pred = model.predict(x_test_scaled)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+# Train and evaluate on scaled data (without PCA)
+train_and_evaluate_models(models, x_train_scaled, x_test_scaled, y_train, y_test, 'Scaled (without PCA)')
 
 
 # #### Train Model, Predict, and Calculating Model Accuracy (Without scaled & PCA transformed)
@@ -477,23 +501,8 @@ for model_name, model in models:
 # In[51]:
 
 
-for model_name, model in models:
-    
-    model.fit(x_train,y_train)
-    
-    y_train_pred = model.predict(x_train)
-    y_test_pred = model.predict(x_test)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+# Train and evaluate on raw data (without scaling or PCA)
+train_and_evaluate_models(models, x_train, x_test, y_train, y_test, 'Raw (without Scaling or PCA)')
 
 
 # ###### By studing accuracy factors, best model was given by logistic regression with scaled and PCA transformed data. It's accuracy is about 85.95% and precision is also high.
