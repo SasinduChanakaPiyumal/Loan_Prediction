@@ -303,7 +303,7 @@ y = df_encorded['Loan_Status'].values
 # In[38]:
 
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 
 
 # In[39]:
@@ -433,6 +433,13 @@ for model_name, model in models:
     
     model.fit(x_train_pca,y_train)
     
+    # Cross-validation evaluation
+    cv_scores = cross_val_score(model, x_train_pca, y_train, cv=5)
+    print(f'\n{model_name}')
+    print('Cross-Validation Scores:', cv_scores)
+    print(f'Mean CV Score: {cv_scores.mean():.4f}')
+    print(f'Standard Deviation: {cv_scores.std():.4f}')
+    
     y_train_pred = model.predict(x_train_pca)
     y_test_pred = model.predict(x_test_pca)
     
@@ -441,7 +448,6 @@ for model_name, model in models:
     conf_matrix = confusion_matrix(y_test,y_test_pred)
     class_report = classification_report(y_test, y_test_pred)
     
-    print(model_name)
     print('Train_accuracy :',train_accuracy)
     print('Test_accuracy :\n',test_accuracy)
     print('Confusion_matrix :\n',conf_matrix)
