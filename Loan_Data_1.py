@@ -18,13 +18,14 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-data = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
 
 
 # In[6]:
 
 
-df = pd.DataFrame(data)
+# The code was consolidated into the cell above. `pd.read_csv` already returns a DataFrame,
+# making `df = pd.DataFrame(data)` redundant.
 
 
 # In[7]:
@@ -134,9 +135,9 @@ df.isnull().sum()
 category_col = ['Gender','Married','Education','Self_Employed','Property_Area']
 
 for column in category_col:
-    globals()[f'mode_{column}'] = df[column].mode()[0]
-    df[column].fillna(globals()[f'mode_{column}'], inplace=True)
-    print(f"Mode of {column} :",globals()[f'mode_{column}'])
+    mode_val = df[column].mode()[0]
+    df[column].fillna(mode_val, inplace=True)
+    print(f"Mode of {column} : {mode_val}")
 
 
 # In[19]:
@@ -165,9 +166,9 @@ df['Loan_Amount_Term'].value_counts()
 numeric_category_col = ['Credit_History','Loan_Amount_Term']
 
 for column in numeric_category_col:
-    globals()[f'mode_{column}'] = df[column].mode()[0]
-    df[column].fillna(globals()[f'mode_{column}'], inplace=True)
-    print(f"Mode of {column} :",globals()[f'mode_{column}'])
+    mode_val = df[column].mode()[0]
+    df[column].fillna(mode_val, inplace=True)
+    print(f"Mode of {column} : {mode_val}")
 
 
 # In[23]:
@@ -206,8 +207,7 @@ LoanAmount_out =df['LoanAmount']<=500
 # In[27]:
 
 
-df_no_outliers = df.copy()
-
+# The initial .copy() is redundant as the next line reassigns the variable.
 df_no_outliers = df[(ApplicantIncome_out) & (CoapplicantIncome_out) & (LoanAmount_out)]
 
 
@@ -309,7 +309,8 @@ from sklearn.model_selection import train_test_split
 # In[39]:
 
 
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 0.2)
+# Add random_state for reproducible train-test splits
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 0.2, random_state=42)
 
 
 # ##### 20% of the whole data set was used as test set 
@@ -379,10 +380,8 @@ x_test_pca = pca.transform(x_test_scaled)
 # In[45]:
 
 
-def model_acc(model):
-    model.fit(x_train,y_train)
-    acc = model.score(x_test, y_test)
-    print(str(model)+'-->'+str(acc))
+# This section contained a redundant `model_acc` function and its calls.
+# It has been removed in favor of the more detailed evaluation below.
 
 
 # #### Logistic Regression
@@ -391,8 +390,6 @@ def model_acc(model):
 
 
 from sklearn.linear_model import LogisticRegression
-lo = LogisticRegression()
-model_acc(lo)
 
 
 # #### Decision Tree 
@@ -401,8 +398,6 @@ model_acc(lo)
 
 
 from sklearn.tree import DecisionTreeClassifier
-dt = DecisionTreeClassifier()
-model_acc(dt)
 
 
 # #### Random Forest
@@ -411,8 +406,6 @@ model_acc(dt)
 
 
 from sklearn.ensemble import RandomForestClassifier
-rf = RandomForestClassifier()
-model_acc(rf)
 
 
 # ### Train Model, Predict, and Calculating Model Accuracy
@@ -423,29 +416,40 @@ model_acc(rf)
 
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.base import clone
+
+def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, models_list, data_description):
+    """
+    Helper function to train, evaluate, and report metrics for a list of models.
+    It fixes a bug in the original code by cloning models to ensure they are fresh for each run.
+    """
+    print(f"--- Evaluation for {data_description} ---")
+    for model_name, model_prototype in models_list:
+        # Clone the model to get a fresh, unfitted instance.
+        model = clone(model_prototype)
+        model.fit(x_train_data, y_train_data)
+        
+        y_train_pred = model.predict(x_train_data)
+        y_test_pred = model.predict(x_test_data)
+        
+        train_accuracy = accuracy_score(y_train_data, y_train_pred)
+        test_accuracy = accuracy_score(y_test_data, y_test_pred)
+        conf_matrix = confusion_matrix(y_test_data, y_test_pred)
+        class_report = classification_report(y_test_data, y_test_pred)
+        
+        print(f"\n{model_name}")
+        print('Train_accuracy :', train_accuracy)
+        print('Test_accuracy :\n', test_accuracy)
+        print('Confusion_matrix :\n', conf_matrix)
+        print('Classification_report :\n', class_report)
+
 models = [
     ('Logistic Regression', LogisticRegression()),
     ('Decision Tree', DecisionTreeClassifier()),
     ('Random Forest', RandomForestClassifier())
 ]
 
-for model_name, model in models:
-    
-    model.fit(x_train_pca,y_train)
-    
-    y_train_pred = model.predict(x_train_pca)
-    y_test_pred = model.predict(x_test_pca)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
 
 
 # ### Train Model, Predict, and Calculating Model Accuracy for scaled data (without PCA transformed)
@@ -453,23 +457,7 @@ for model_name, model in models:
 # In[50]:
 
 
-for model_name, model in models:
-    
-    model.fit(x_train_scaled,y_train)
-    
-    y_train_pred = model.predict(x_train_scaled)
-    y_test_pred = model.predict(x_test_scaled)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+evaluate_and_report(x_train_scaled, y_train, x_test_scaled, y_test, models, "scaled data (without PCA)")
 
 
 # #### Train Model, Predict, and Calculating Model Accuracy (Without scaled & PCA transformed)
@@ -477,23 +465,7 @@ for model_name, model in models:
 # In[51]:
 
 
-for model_name, model in models:
-    
-    model.fit(x_train,y_train)
-    
-    y_train_pred = model.predict(x_train)
-    y_test_pred = model.predict(x_test)
-    
-    train_accuracy = accuracy_score(y_train,y_train_pred)
-    test_accuracy = accuracy_score(y_test,y_test_pred)
-    conf_matrix = confusion_matrix(y_test,y_test_pred)
-    class_report = classification_report(y_test, y_test_pred)
-    
-    print(model_name)
-    print('Train_accuracy :',train_accuracy)
-    print('Test_accuracy :\n',test_accuracy)
-    print('Confusion_matrix :\n',conf_matrix)
-    print('Classification_report :\n',class_report)
+evaluate_and_report(x_train, y_train, x_test, y_test, models, "data (without scaling & PCA)")
 
 
 # ###### By studing accuracy factors, best model was given by logistic regression with scaled and PCA transformed data. It's accuracy is about 85.95% and precision is also high.
