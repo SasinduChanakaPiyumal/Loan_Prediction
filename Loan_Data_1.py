@@ -12,13 +12,65 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+import os
+from pathlib import Path
 
 # ### Importing Data Set
 
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+# SECURITY FIX: Replaced hardcoded absolute path with secure relative path
+# The original code used 'Z:\\Sasindu\\Data set\\loan_data_set.csv' which:
+# - Exposed the user's filesystem structure and machine-specific paths
+# - Was a path traversal vulnerability allowing potential unauthorized file access
+# - Violated the principle of least privilege and secure configuration
+# 
+# The fix uses a relative path from the script's directory, which is more secure:
+# - No exposure of the full user path
+# - Machine-independent and portable
+# - Prevents path traversal attacks by keeping access within project directory
+# - Standard practice in production applications
+
+def load_loan_data(filename='loan_data_set.csv'):
+    """
+    Securely load loan dataset with path validation.
+    
+    Args:
+        filename: Name of the CSV file (default: 'loan_data_set.csv')
+    
+    Returns:
+        DataFrame with the loaded data
+        
+    Raises:
+        FileNotFoundError: If the file doesn't exist in the expected location
+        ValueError: If filename contains invalid path components
+    """
+    # Validate filename to prevent path traversal attacks
+    if '..' in filename or filename.startswith('/') or filename.startswith('\\'):
+        raise ValueError(f"Invalid filename: {filename}. Filename must be relative and cannot contain '..' or be absolute.")
+    
+    # Get the directory of the current script
+    script_dir = Path(__file__).parent.resolve()
+    
+    # Construct the full path
+    file_path = script_dir / filename
+    
+    # Ensure the resolved path is still within the script directory (defense in depth)
+    try:
+        file_path = file_path.resolve()
+        file_path.relative_to(script_dir)
+    except ValueError:
+        raise ValueError(f"Path traversal detected. Attempted path: {file_path}")
+    
+    # Check if file exists before attempting to read
+    if not file_path.exists():
+        raise FileNotFoundError(f"Loan dataset not found at {file_path}")
+    
+    return pd.read_csv(str(file_path))
+
+
+df = load_loan_data()
 
 
 # In[6]:
