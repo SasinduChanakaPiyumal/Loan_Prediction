@@ -51,7 +51,7 @@ df.shape
 # In[10]:
 
 
-df.isnull().sum()
+
 
 
 #  ##### Discriptive Statistics
@@ -124,7 +124,6 @@ for col in numeric_vals:
 # In[17]:
 
 
-df.isnull().sum()
 
 
 # ##### Categorycal data filled with mode
@@ -134,16 +133,14 @@ df.isnull().sum()
 
 category_col = ['Gender','Married','Education','Self_Employed','Property_Area']
 
+df[category_col] = df[category_col].fillna(df[category_col].mode().iloc[0])
 for column in category_col:
-    mode_val = df[column].mode()[0]
-    df[column].fillna(mode_val, inplace=True)
-    print(f"Mode of {column} : {mode_val}")
+    print(f"Mode of {column} : {df[column].mode()[0]}")
 
 
 # In[19]:
 
 
-df.isnull().sum()
 
 
 # In[20]:
@@ -165,16 +162,15 @@ df['Loan_Amount_Term'].value_counts()
 
 numeric_category_col = ['Credit_History','Loan_Amount_Term']
 
+df[numeric_category_col] = df[numeric_category_col].fillna(df[numeric_category_col].mode().iloc[0])
 for column in numeric_category_col:
-    mode_val = df[column].mode()[0]
-    df[column].fillna(mode_val, inplace=True)
-    print(f"Mode of {column} : {mode_val}")
+    print(f"Mode of {column} : {df[column].mode()[0]}")
 
 
 # In[23]:
 
 
-df.isnull().sum()
+
 
 
 # ##### LoanAmount has skewed distribution. Usualy,The Median is used to fill null values for this type senarios. So, Missing values of the Loan Amount was filled with median value.  
@@ -189,7 +185,7 @@ df['LoanAmount'].fillna(median_Loan_Amount,inplace=True)
 # In[25]:
 
 
-df.isnull().sum()
+
 
 
 # ##### Now, All the missing values have filled. Then, Move on to outlier ditection step.
