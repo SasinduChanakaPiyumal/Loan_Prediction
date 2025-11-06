@@ -80,8 +80,9 @@ for feature in features:
 # In[13]:
 
 
+df['Dependents']=df['Dependents'].replace('3+','3')
 mode = df['Dependents'].mode()[0]
-df['Dependents']=df['Dependents'].replace('3+','3').fillna(mode)
+df['Dependents']=df['Dependents'].fillna(mode)
 
 
 # In[14]:
