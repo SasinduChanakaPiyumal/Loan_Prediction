@@ -417,16 +417,38 @@ from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.base import clone
+from sklearn.model_selection import cross_val_score, cross_validate
 
 def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, models_list, data_description):
     """
     Helper function to train, evaluate, and report metrics for a list of models.
     It fixes a bug in the original code by cloning models to ensure they are fresh for each run.
+    Now includes k-fold cross-validation for more robust performance estimates.
     """
     print(f"--- Evaluation for {data_description} ---")
     for model_name, model_prototype in models_list:
         # Clone the model to get a fresh, unfitted instance.
         model = clone(model_prototype)
+        
+        # Perform 5-fold cross-validation on training data
+        print(f"\n{model_name}")
+        print("=== Cross-Validation Results (5-fold) ===")
+        cv_scores = cross_val_score(model, x_train_data, y_train_data, cv=5, scoring='accuracy')
+        print(f"CV Accuracy Scores: {cv_scores}")
+        print(f"CV Mean Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
+        
+        # Also perform cross-validation with multiple metrics
+        cv_results = cross_validate(
+            model, x_train_data, y_train_data, cv=5, 
+            scoring=['accuracy', 'precision', 'recall', 'f1'],
+            return_train_score=True
+        )
+        print(f"CV Mean Precision: {cv_results['test_precision'].mean():.4f} (+/- {cv_results['test_precision'].std() * 2:.4f})")
+        print(f"CV Mean Recall: {cv_results['test_recall'].mean():.4f} (+/- {cv_results['test_recall'].std() * 2:.4f})")
+        print(f"CV Mean F1-Score: {cv_results['test_f1'].mean():.4f} (+/- {cv_results['test_f1'].std() * 2:.4f})")
+        
+        # Train on full training set and evaluate on test set
+        print("\n=== Train-Test Split Results ===")
         model.fit(x_train_data, y_train_data)
         
         y_train_pred = model.predict(x_train_data)
@@ -437,11 +459,11 @@ def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, mo
         conf_matrix = confusion_matrix(y_test_data, y_test_pred)
         class_report = classification_report(y_test_data, y_test_pred)
         
-        print(f"\n{model_name}")
         print('Train_accuracy :', train_accuracy)
-        print('Test_accuracy :\n', test_accuracy)
+        print('Test_accuracy :', test_accuracy)
         print('Confusion_matrix :\n', conf_matrix)
         print('Classification_report :\n', class_report)
+        print("-" * 60)
 
 models = [
     ('Logistic Regression', LogisticRegression()),
