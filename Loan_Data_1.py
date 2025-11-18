@@ -4,12 +4,26 @@
 # In[4]:
 
 
+# Import libraries
+# Standard library
+import os
+from pathlib import Path
+import warnings
+
+# Third-party
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.base import clone
 
-import warnings
 warnings.filterwarnings('ignore')
 
 
@@ -18,7 +32,35 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+# Path resolution helper using pathlib for robustness
+
+def resolve_csv_path(filename: str = 'loan_data_set.csv') -> Path:
+    """Resolve the CSV file path in order of priority:
+    1) DATA_PATH environment variable
+    2) ./loan_data_set.csv
+    3) ./data/loan_data_set.csv
+    Returns a Path object and raises FileNotFoundError if not found.
+    """
+    env_path = os.getenv('DATA_PATH')
+    if env_path:
+        p = Path(env_path).expanduser().resolve()
+        if p.exists():
+            return p
+    # fallback locations
+    for candidate in [Path(filename), Path('data') / filename]:
+        p = candidate.expanduser().resolve()
+        if p.exists():
+            return p
+    raise FileNotFoundError(
+        "Could not find 'loan_data_set.csv'. Please ensure the file exists in one of:\n"
+        "  1. Location specified by DATA_PATH environment variable\n"
+        "  2. Current directory: ./loan_data_set.csv\n"
+        "  3. Data subdirectory: ./data/loan_data_set.csv"
+    )
+
+csv_path = resolve_csv_path()
+print(f"Reading dataset from: {csv_path}")
+df = pd.read_csv(csv_path)
 
 
 # In[6]:
@@ -258,7 +300,7 @@ plt.show()
 # In[32]:
 
 
-from sklearn.preprocessing import LabelEncoder
+
 
 
 # In[33]:
@@ -303,7 +345,7 @@ y = df_encorded['Loan_Status'].values
 # In[38]:
 
 
-from sklearn.model_selection import train_test_split
+
 
 
 # In[39]:
@@ -323,7 +365,7 @@ x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 0.2, random_sta
 # In[40]:
 
 
-from sklearn.preprocessing import MinMaxScaler
+
 
 
 # In[41]:
@@ -341,7 +383,7 @@ x_test_scaled = mm.transform(x_test)
 # In[42]:
 
 
-from sklearn.decomposition import PCA
+
 
 
 # In[43]:
@@ -389,7 +431,7 @@ x_test_pca = pca.transform(x_test_scaled)
 # In[46]:
 
 
-from sklearn.linear_model import LogisticRegression
+
 
 
 # #### Decision Tree 
@@ -397,7 +439,7 @@ from sklearn.linear_model import LogisticRegression
 # In[47]:
 
 
-from sklearn.tree import DecisionTreeClassifier
+
 
 
 # #### Random Forest
@@ -405,7 +447,7 @@ from sklearn.tree import DecisionTreeClassifier
 # In[48]:
 
 
-from sklearn.ensemble import RandomForestClassifier
+
 
 
 # ### Train Model, Predict, and Calculating Model Accuracy
@@ -415,8 +457,8 @@ from sklearn.ensemble import RandomForestClassifier
 # In[49]:
 
 
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.base import clone
+
+
 
 def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, models_list, data_description):
     """
@@ -444,9 +486,9 @@ def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, mo
         print('Classification_report :\n', class_report)
 
 models = [
-    ('Logistic Regression', LogisticRegression()),
-    ('Decision Tree', DecisionTreeClassifier()),
-    ('Random Forest', RandomForestClassifier())
+    ('Logistic Regression', LogisticRegression(max_iter=1000, random_state=42)),
+    ('Decision Tree', DecisionTreeClassifier(random_state=42)),
+    ('Random Forest', RandomForestClassifier(n_estimators=200, random_state=42))
 ]
 
 evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
