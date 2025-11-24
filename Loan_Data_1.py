@@ -9,8 +9,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import warnings
-warnings.filterwarnings('ignore')
 
 
 # ### Importing Data Set
@@ -18,7 +16,7 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('loan_data_set.csv')
 
 
 # In[6]:
@@ -31,7 +29,6 @@ df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
 # In[7]:
 
 
-df.head()
 
 
 # #### Informations of the Data set
@@ -45,13 +42,13 @@ df.info()
 # In[9]:
 
 
-df.shape
+print(df.shape)
 
 
 # In[10]:
 
 
-df.isnull().sum()
+print(df.isnull().sum())
 
 
 #  ##### Discriptive Statistics
@@ -59,7 +56,7 @@ df.isnull().sum()
 # In[11]:
 
 
-df.describe()
+print(df.describe())
 
 
 # #### Value Counts of categorical Data
@@ -124,7 +121,7 @@ for col in numeric_vals:
 # In[17]:
 
 
-df.isnull().sum()
+print(df.isnull().sum())
 
 
 # ##### Categorycal data filled with mode
@@ -143,19 +140,19 @@ for column in category_col:
 # In[19]:
 
 
-df.isnull().sum()
+print(df.isnull().sum())
 
 
 # In[20]:
 
 
-df['Credit_History'].value_counts()
+print(df['Credit_History'].value_counts())
 
 
 # In[21]:
 
 
-df['Loan_Amount_Term'].value_counts()
+print(df['Loan_Amount_Term'].value_counts())
 
 
 # ##### Loan_Amount_Term and Credit_History also like categorical data because thay haven't distributed distribution. So, Mode values of the each column can be added for missing values.
@@ -174,7 +171,7 @@ for column in numeric_category_col:
 # In[23]:
 
 
-df.isnull().sum()
+print(df.isnull().sum())
 
 
 # ##### LoanAmount has skewed distribution. Usualy,The Median is used to fill null values for this type senarios. So, Missing values of the Loan Amount was filled with median value.  
@@ -189,7 +186,7 @@ df['LoanAmount'].fillna(median_Loan_Amount,inplace=True)
 # In[25]:
 
 
-df.isnull().sum()
+print(df.isnull().sum())
 
 
 # ##### Now, All the missing values have filled. Then, Move on to outlier ditection step.
@@ -230,7 +227,6 @@ df_no_outliers=df_no_outliers.drop(columns ='Loan_ID',axis=1)
 # In[30]:
 
 
-df_no_outliers.head()
 
 
 # ##### Loan_ID colunm is not need further more. So, that column was removed.
@@ -274,7 +270,6 @@ for col in cate_cols_LE:
 # In[34]:
 
 
-df_encorded.head()
 
 
 # #### One hot Encording for Property_Area 
@@ -288,7 +283,6 @@ df_encorded = pd.get_dummies(df_encorded, columns=['Property_Area'])
 # In[36]:
 
 
-df_encorded.head()
 
 
 # ### Splitting Data
