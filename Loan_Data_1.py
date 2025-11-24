@@ -13,6 +13,11 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
+APPLICANT_INCOME_THRESHOLD = 50000
+COAPPLICANT_INCOME_THRESHOLD = 20000
+LOAN_AMOUNT_THRESHOLD = 500
+
+
 # ### Importing Data Set
 
 # In[5]:
