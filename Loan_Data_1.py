@@ -12,13 +12,15 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+# Configuration to control plotting for performance benchmarking
+SHOW_PLOTS = False
 
 # ### Importing Data Set
 
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('loan_data_set.csv')
 
 
 # In[6]:
@@ -97,13 +99,14 @@ df['Dependents']=df['Dependents'].astype('int32')
 
 category_col = ['Gender','Married','Education','Self_Employed','Property_Area','Loan_Status']
 
-for column in category_col:
-    plt.figure(figsize=(5,8))
-    sns.countplot(df[column])
-    plt.xlabel(f'{column}')
-    plt.ylabel('Count')
-    plt.title(f'Count plot of the {column}')
-    plt.show()
+if SHOW_PLOTS:
+    for column in category_col:
+        plt.figure(figsize=(5,8))
+        sns.countplot(df[column])
+        plt.xlabel(f'{column}')
+        plt.ylabel('Count')
+        plt.title(f'Count plot of the {column}')
+        # plt.show()
 
 
 # In[16]:
@@ -111,14 +114,15 @@ for column in category_col:
 
 numeric_vals = ['ApplicantIncome','CoapplicantIncome','LoanAmount','Loan_Amount_Term','Credit_History']
 
-for col in numeric_vals:
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 2, 1)
-    sns.histplot(df[col], kde=True)
-    plt.subplot(1, 2, 2)
-    sns.boxplot(x=df[col])
-    plt.tight_layout()
-    plt.show()
+if SHOW_PLOTS:
+    for col in numeric_vals:
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 2, 1)
+        sns.histplot(df[col], kde=True)
+        plt.subplot(1, 2, 2)
+        sns.boxplot(x=df[col])
+        plt.tight_layout()
+        # plt.show()
 
 
 # In[17]:
@@ -244,13 +248,14 @@ df_no_outliers.head()
 # In[31]:
 
 
-plt.figure(figsize=(12,8))
-plt.subplot(1, 2, 1)
-sns.countplot(data = df, hue= df["Property_Area"],x=df['Loan_Status'])
-plt.subplot(1, 2, 2)
-sns.countplot(data = df, x= df["Property_Area"],hue=df['Loan_Status'])
-plt.tight_layout()
-plt.show()
+if SHOW_PLOTS:
+    plt.figure(figsize=(12,8))
+    plt.subplot(1, 2, 1)
+    sns.countplot(data = df, hue= df["Property_Area"],x=df['Loan_Status'])
+    plt.subplot(1, 2, 2)
+    sns.countplot(data = df, x= df["Property_Area"],hue=df['Loan_Status'])
+    plt.tight_layout()
+    # plt.show()
 
 
 # #### Lable encording to binary categorical features
@@ -353,12 +358,13 @@ pca.fit(x_train_scaled)
 explained_variance_ratio = pca.explained_variance_ratio_
 cumulative_explained_variance = explained_variance_ratio.cumsum()
 
-plt.figure(figsize=(10, 6))
-plt.plot(range(1, len(explained_variance_ratio) + 1), cumulative_explained_variance, marker='o', linestyle='--')
-plt.xlabel('Number of Principal Components')
-plt.ylabel('Cumulative Explained Variance')
-plt.title('Explained Variance vs. Number of Components')
-plt.show()
+if SHOW_PLOTS:
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(explained_variance_ratio) + 1), cumulative_explained_variance, marker='o', linestyle='--')
+    plt.xlabel('Number of Principal Components')
+    plt.ylabel('Cumulative Explained Variance')
+    plt.title('Explained Variance vs. Number of Components')
+    # plt.show()
 
 
 # #### Apply PCA
@@ -446,7 +452,7 @@ def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, mo
 models = [
     ('Logistic Regression', LogisticRegression()),
     ('Decision Tree', DecisionTreeClassifier()),
-    ('Random Forest', RandomForestClassifier())
+    ('Random Forest', RandomForestClassifier(n_jobs=-1))
 ]
 
 evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
