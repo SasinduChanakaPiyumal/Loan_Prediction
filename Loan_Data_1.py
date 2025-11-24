@@ -3,7 +3,7 @@
 
 # In[4]:
 
-
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('loan_data_set.csv')
 
 
 # In[6]:
@@ -444,9 +444,9 @@ def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, mo
         print('Classification_report :\n', class_report)
 
 models = [
-    ('Logistic Regression', LogisticRegression()),
-    ('Decision Tree', DecisionTreeClassifier()),
-    ('Random Forest', RandomForestClassifier())
+    ('Logistic Regression', LogisticRegression(random_state=42, solver='liblinear', max_iter=1000)),
+    ('Decision Tree', DecisionTreeClassifier(random_state=42, max_depth=10, criterion='entropy')),
+    ('Random Forest', RandomForestClassifier(random_state=42, n_estimators=100, max_depth=10))
 ]
 
 evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
