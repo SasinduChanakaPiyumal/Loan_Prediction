@@ -264,10 +264,11 @@ from sklearn.preprocessing import LabelEncoder
 # In[33]:
 
 
-LE = LabelEncoder()
 cate_cols_LE = ['Gender','Married','Education','Self_Employed','Loan_Status']
 df_encorded = df_no_outliers.copy()
 for col in cate_cols_LE:
+    # Create a fresh LabelEncoder instance for each column to avoid contamination
+    LE = LabelEncoder()
     df_encorded[col] = LE.fit_transform(df_encorded[col])
 
 
