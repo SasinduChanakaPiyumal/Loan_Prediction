@@ -353,11 +353,35 @@ pca.fit(x_train_scaled)
 explained_variance_ratio = pca.explained_variance_ratio_
 cumulative_explained_variance = explained_variance_ratio.cumsum()
 
+# Determine optimal number of components based on 95% variance threshold
+variance_threshold = 0.95
+if cumulative_explained_variance[-1] >= variance_threshold:
+    optimal_n_components = np.argmax(cumulative_explained_variance >= variance_threshold) + 1
+else:
+    # If 95% threshold is never reached, use all components
+    optimal_n_components = len(cumulative_explained_variance)
+    print(f"Warning: 95% variance threshold not reached. Maximum variance: {cumulative_explained_variance[-1]:.4f}")
+
+# Print selection results
+print(f"\n{'='*60}")
+print(f"PCA Component Selection Summary")
+print(f"{'='*60}")
+print(f"Variance threshold: {variance_threshold * 100}%")
+print(f"Number of components selected: {optimal_n_components}")
+print(f"Total cumulative variance explained: {cumulative_explained_variance[optimal_n_components-1]:.4f} ({cumulative_explained_variance[optimal_n_components-1]*100:.2f}%)")
+print(f"\nIndividual variance contribution per component:")
+for i in range(optimal_n_components):
+    print(f"  Component {i+1}: {explained_variance_ratio[i]:.4f} ({explained_variance_ratio[i]*100:.2f}%)")
+print(f"{'='*60}\n")
+
 plt.figure(figsize=(10, 6))
 plt.plot(range(1, len(explained_variance_ratio) + 1), cumulative_explained_variance, marker='o', linestyle='--')
+plt.axhline(y=variance_threshold, color='r', linestyle='--', label=f'{variance_threshold*100}% Threshold')
+plt.axvline(x=optimal_n_components, color='g', linestyle='--', label=f'Selected: {optimal_n_components} components')
 plt.xlabel('Number of Principal Components')
 plt.ylabel('Cumulative Explained Variance')
 plt.title('Explained Variance vs. Number of Components')
+plt.legend()
 plt.show()
 
 
@@ -366,12 +390,12 @@ plt.show()
 # In[44]:
 
 
-pca = PCA(n_components=8)
+pca = PCA(n_components=optimal_n_components)
 x_train_pca = pca.fit_transform(x_train_scaled)
 x_test_pca = pca.transform(x_test_scaled)
 
 
-# ##### By studing above graph , 8 is the best number of components.
+# ##### Optimal number of components automatically selected based on 95% explained variance threshold.
 
 # ### Define Model
 
