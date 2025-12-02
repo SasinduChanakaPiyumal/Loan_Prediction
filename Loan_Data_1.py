@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('loan_data_set.csv')
 
 
 # In[6]:
