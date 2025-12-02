@@ -4,13 +4,17 @@
 # In[4]:
 
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import warnings
-warnings.filterwarnings('ignore')
+# Constants
+INCOME_THRESHOLD = 50000
+COAPPLICANT_INCOME_THRESHOLD = 20000
+LOAN_AMOUNT_THRESHOLD = 500
+TEST_SPLIT_SIZE = 0.2
 
 
 # ### Importing Data Set
@@ -18,7 +22,7 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv(os.path.join(os.path.dirname(__file__), 'loan_data_set.csv'))
 
 
 # In[6]:
@@ -136,7 +140,7 @@ category_col = ['Gender','Married','Education','Self_Employed','Property_Area']
 
 for column in category_col:
     mode_val = df[column].mode()[0]
-    df[column].fillna(mode_val, inplace=True)
+    df[column] = df[column].fillna(mode_val)
     print(f"Mode of {column} : {mode_val}")
 
 
@@ -167,7 +171,7 @@ numeric_category_col = ['Credit_History','Loan_Amount_Term']
 
 for column in numeric_category_col:
     mode_val = df[column].mode()[0]
-    df[column].fillna(mode_val, inplace=True)
+    df[column] = df[column].fillna(mode_val)
     print(f"Mode of {column} : {mode_val}")
 
 
@@ -183,7 +187,7 @@ df.isnull().sum()
 
 
 median_Loan_Amount = df['LoanAmount'].median()
-df['LoanAmount'].fillna(median_Loan_Amount,inplace=True)
+df['LoanAmount'] = df['LoanAmount'].fillna(median_Loan_Amount)
 
 
 # In[25]:
@@ -199,9 +203,9 @@ df.isnull().sum()
 # In[26]:
 
 
-ApplicantIncome_out = df['ApplicantIncome']<=50000
-CoapplicantIncome_out =df['CoapplicantIncome']<=20000
-LoanAmount_out =df['LoanAmount']<=500
+ApplicantIncome_out = df['ApplicantIncome']<=INCOME_THRESHOLD
+CoapplicantIncome_out =df['CoapplicantIncome']<=COAPPLICANT_INCOME_THRESHOLD
+LoanAmount_out =df['LoanAmount']<=LOAN_AMOUNT_THRESHOLD
 
 
 # In[27]:
@@ -310,7 +314,7 @@ from sklearn.model_selection import train_test_split
 
 
 # Add random_state for reproducible train-test splits
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = 0.2, random_state=42)
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size = TEST_SPLIT_SIZE, random_state=42)
 
 
 # ##### 20% of the whole data set was used as test set 
