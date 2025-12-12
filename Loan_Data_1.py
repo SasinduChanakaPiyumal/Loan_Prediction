@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+from pathlib import Path
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -18,7 +20,23 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+# Determine data path in a portable way:
+# Priority order:
+# 1) LOAN_DATA_PATH environment variable
+# 2) loan_data_set.csv next to this script
+# 3) loan_data_set.csv in current working directory
+env_path = os.environ.get('LOAN_DATA_PATH')
+if env_path:
+    data_path = Path(env_path)
+else:
+    script_dir = Path(__file__).resolve().parent
+    local_file = script_dir / 'loan_data_set.csv'
+    if local_file.exists():
+        data_path = local_file
+    else:
+        data_path = Path.cwd() / 'loan_data_set.csv'
+
+df = pd.read_csv(data_path)
 
 
 # In[6]:
