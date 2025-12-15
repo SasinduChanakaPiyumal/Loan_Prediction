@@ -196,12 +196,118 @@ df.isnull().sum()
 
 # ### Remove Outliers.
 
+# ##### Outlier Detection Implementation
+# ##### Instead of using hardcoded thresholds, we implement statistical methods for robust outlier detection.
+# ##### Two methods are available:
+# ##### 1. IQR (Interquartile Range) Method: Robust to skewed distributions, doesn't assume normality
+# ##### 2. Z-Score Method: Suitable for normally distributed data
+# ##### The IQR method is used by default as the data shows skewed distribution (as noted in scaling section).
+
 # In[26]:
 
 
-ApplicantIncome_out = df['ApplicantIncome']<=50000
-CoapplicantIncome_out =df['CoapplicantIncome']<=20000
-LoanAmount_out =df['LoanAmount']<=500
+def detect_outliers_iqr(series, multiplier=1.5):
+    """
+    Detect outliers using the IQR (Interquartile Range) method.
+    
+    Parameters:
+    -----------
+    series : pd.Series
+        The data series to analyze for outliers
+    multiplier : float, default=1.5
+        IQR multiplier for determining outlier bounds
+        - 1.5 (default): Standard outlier detection
+        - 3.0: Extreme outlier detection (more conservative)
+        
+    Returns:
+    --------
+    pd.Series (boolean)
+        Boolean mask where True indicates values within acceptable range
+        
+    Statistical Justification:
+    -------------------------
+    The IQR method defines outliers as values outside [Q1 - multiplier*IQR, Q3 + multiplier*IQR]
+    where Q1 is 25th percentile, Q3 is 75th percentile, and IQR = Q3 - Q1.
+    This method is robust to skewed distributions and doesn't assume normality.
+    """
+    Q1 = series.quantile(0.25)
+    Q3 = series.quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - multiplier * IQR
+    upper_bound = Q3 + multiplier * IQR
+    
+    # Print diagnostic information
+    print(f"\nOutlier detection for {series.name}:")
+    print(f"  Q1 (25th percentile): {Q1:.2f}")
+    print(f"  Q3 (75th percentile): {Q3:.2f}")
+    print(f"  IQR: {IQR:.2f}")
+    print(f"  Lower bound: {lower_bound:.2f}")
+    print(f"  Upper bound: {upper_bound:.2f}")
+    print(f"  Values outside bounds: {((series < lower_bound) | (series > upper_bound)).sum()}")
+    
+    return (series >= lower_bound) & (series <= upper_bound)
+
+
+def detect_outliers_zscore(series, threshold=3.0):
+    """
+    Detect outliers using the Z-score method.
+    
+    Parameters:
+    -----------
+    series : pd.Series
+        The data series to analyze for outliers
+    threshold : float, default=3.0
+        Z-score threshold for outlier detection
+        - 3.0 (default): ~99.7% of data retained (assuming normality)
+        - 2.5: More aggressive outlier removal
+        
+    Returns:
+    --------
+    pd.Series (boolean)
+        Boolean mask where True indicates values within acceptable range
+        
+    Statistical Justification:
+    -------------------------
+    Z-score measures how many standard deviations a value is from the mean.
+    Values with |z-score| > threshold are considered outliers.
+    Note: This method assumes normal distribution.
+    """
+    mean = series.mean()
+    std = series.std()
+    z_scores = np.abs((series - mean) / std)
+    
+    # Print diagnostic information
+    print(f"\nOutlier detection for {series.name}:")
+    print(f"  Mean: {mean:.2f}")
+    print(f"  Std Dev: {std:.2f}")
+    print(f"  Z-score threshold: {threshold}")
+    print(f"  Values with |z-score| > {threshold}: {(z_scores > threshold).sum()}")
+    
+    return z_scores <= threshold
+
+
+# Configuration for outlier detection
+# You can change these parameters based on domain knowledge and sensitivity analysis
+OUTLIER_METHOD = 'iqr'  # Options: 'iqr' or 'zscore'
+IQR_MULTIPLIER = 1.5    # Standard: 1.5, Conservative: 3.0
+ZSCORE_THRESHOLD = 3.0  # Standard: 3.0, Aggressive: 2.5
+
+# Apply outlier detection based on selected method
+print(f"Using {OUTLIER_METHOD.upper()} method for outlier detection")
+print("=" * 60)
+
+if OUTLIER_METHOD == 'iqr':
+    ApplicantIncome_out = detect_outliers_iqr(df['ApplicantIncome'], multiplier=IQR_MULTIPLIER)
+    CoapplicantIncome_out = detect_outliers_iqr(df['CoapplicantIncome'], multiplier=IQR_MULTIPLIER)
+    LoanAmount_out = detect_outliers_iqr(df['LoanAmount'], multiplier=IQR_MULTIPLIER)
+elif OUTLIER_METHOD == 'zscore':
+    ApplicantIncome_out = detect_outliers_zscore(df['ApplicantIncome'], threshold=ZSCORE_THRESHOLD)
+    CoapplicantIncome_out = detect_outliers_zscore(df['CoapplicantIncome'], threshold=ZSCORE_THRESHOLD)
+    LoanAmount_out = detect_outliers_zscore(df['LoanAmount'], threshold=ZSCORE_THRESHOLD)
+else:
+    raise ValueError(f"Unknown outlier detection method: {OUTLIER_METHOD}")
+
+print("=" * 60)
 
 
 # In[27]:
