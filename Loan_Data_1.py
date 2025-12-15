@@ -417,6 +417,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.base import clone
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+
 
 def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, models_list, data_description):
     """
@@ -428,28 +430,82 @@ def evaluate_and_report(x_train_data, y_train_data, x_test_data, y_test_data, mo
         # Clone the model to get a fresh, unfitted instance.
         model = clone(model_prototype)
         model.fit(x_train_data, y_train_data)
-        
+
         y_train_pred = model.predict(x_train_data)
         y_test_pred = model.predict(x_test_data)
-        
+
         train_accuracy = accuracy_score(y_train_data, y_train_pred)
         test_accuracy = accuracy_score(y_test_data, y_test_pred)
         conf_matrix = confusion_matrix(y_test_data, y_test_pred)
         class_report = classification_report(y_test_data, y_test_pred)
-        
+
         print(f"\n{model_name}")
         print('Train_accuracy :', train_accuracy)
         print('Test_accuracy :\n', test_accuracy)
         print('Confusion_matrix :\n', conf_matrix)
         print('Classification_report :\n', class_report)
 
+# Define reproducible base models
 models = [
-    ('Logistic Regression', LogisticRegression()),
-    ('Decision Tree', DecisionTreeClassifier()),
-    ('Random Forest', RandomForestClassifier())
+    ('Logistic Regression', LogisticRegression(max_iter=1000, solver='lbfgs')),
+    ('Decision Tree', DecisionTreeClassifier(random_state=42)),
+    ('Random Forest', RandomForestClassifier(random_state=42, n_jobs=-1))
 ]
 
-evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
+# Hyperparameter tuning using GridSearchCV according to RULE-003
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+param_grids = {
+    'Logistic Regression': {
+        'C': [0.01, 0.1, 1.0, 10.0, 100.0],
+        'penalty': ['l2'],
+        'solver': ['lbfgs', 'liblinear']
+    },
+    'Decision Tree': {
+        'max_depth': [None, 3, 5, 7, 9, 12],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'criterion': ['gini', 'entropy']
+    },
+    'Random Forest': {
+        'n_estimators': [100, 200, 400],
+        'max_depth': [None, 5, 10, 15],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'max_features': ['sqrt', 'log2', None, 0.5]
+    }
+}
+
+
+def tune_and_report(x_train_data, y_train_data, x_test_data, y_test_data, models_list, data_description):
+    print(f"=== Hyperparameter Tuning for {data_description} ===")
+    for model_name, model_prototype in models_list:
+        print(f"\nTuning {model_name}...")
+        grid = GridSearchCV(
+            estimator=model_prototype,
+            param_grid=param_grids[model_name],
+            scoring='accuracy',
+            cv=cv,
+            n_jobs=-1,
+            verbose=0,
+            refit=True,
+        )
+        grid.fit(x_train_data, y_train_data)
+
+        best_model = grid.best_estimator_
+        y_test_pred = best_model.predict(x_test_data)
+        test_accuracy = accuracy_score(y_test_data, y_test_pred)
+        conf_matrix = confusion_matrix(y_test_data, y_test_pred)
+        class_report = classification_report(y_test_data, y_test_pred)
+
+        print(f"Best params: {grid.best_params_}")
+        print(f"Best CV accuracy: {grid.best_score_:.4f}")
+        print(f"Test accuracy: {test_accuracy:.4f}")
+        print('Confusion_matrix :\n', conf_matrix)
+        print('Classification_report :\n', class_report)
+
+# Run tuning for PCA transformed data
+tune_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA transformed data")
 
 
 # ### Train Model, Predict, and Calculating Model Accuracy for scaled data (without PCA transformed)
@@ -457,7 +513,7 @@ evaluate_and_report(x_train_pca, y_train, x_test_pca, y_test, models, "PCA trans
 # In[50]:
 
 
-evaluate_and_report(x_train_scaled, y_train, x_test_scaled, y_test, models, "scaled data (without PCA)")
+tune_and_report(x_train_scaled, y_train, x_test_scaled, y_test, models, "scaled data (without PCA)")
 
 
 # #### Train Model, Predict, and Calculating Model Accuracy (Without scaled & PCA transformed)
@@ -465,7 +521,7 @@ evaluate_and_report(x_train_scaled, y_train, x_test_scaled, y_test, models, "sca
 # In[51]:
 
 
-evaluate_and_report(x_train, y_train, x_test, y_test, models, "data (without scaling & PCA)")
+tune_and_report(x_train, y_train, x_test, y_test, models, "data (without scaling & PCA)")
 
 
 # ###### By studing accuracy factors, best model was given by logistic regression with scaled and PCA transformed data. It's accuracy is about 85.95% and precision is also high.
