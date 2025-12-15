@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 # In[5]:
 
 
-df = pd.read_csv('Z:\\Sasindu\\Data set\\loan_data_set.csv')
+df = pd.read_csv('loan_data_set.csv')
 
 
 # In[6]:
@@ -361,17 +361,81 @@ plt.title('Explained Variance vs. Number of Components')
 plt.show()
 
 
-# #### Apply PCA
+# #### Apply PCA with Systematic Optimization
 
 # In[44]:
 
 
-pca = PCA(n_components=8)
+# APPROACH 1: Variance-based selection (explained variance threshold method)
+# Determine n_components that capture at least 95% of the variance
+variance_threshold = 0.95
+cumsum_variance = cumulative_explained_variance
+n_components_variance = np.argmax(cumsum_variance >= variance_threshold) + 1
+
+print(f"--- PCA Component Selection ---")
+print(f"Variance-based method (threshold={variance_threshold}): {n_components_variance} components "
+      f"(explains {cumsum_variance[n_components_variance-1]:.2%} of variance)")
+
+
+# APPROACH 2: Cross-validation based grid search for optimal n_components
+# This method selects n_components based on actual model performance
+from sklearn.model_selection import cross_val_score
+
+# Define range of n_components to test (from 2 to total number of features)
+max_components = x_train_scaled.shape[1]
+n_components_range = range(2, min(max_components + 1, 15))  # Test up to 14 components or max available
+
+# Use LogisticRegression as the evaluation model (best performer according to analysis)
+best_score = 0
+best_n_components = None
+cv_scores = []
+
+print(f"\nCross-validation based optimization (testing {len(n_components_range)} configurations):")
+for n in n_components_range:
+    # Apply PCA with n components
+    pca_temp = PCA(n_components=n)
+    x_train_pca_temp = pca_temp.fit_transform(x_train_scaled)
+    
+    # Evaluate with 5-fold cross-validation on Logistic Regression
+    model_temp = LogisticRegression(random_state=42, max_iter=1000)
+    scores = cross_val_score(model_temp, x_train_pca_temp, y_train, cv=5, scoring='accuracy')
+    mean_score = scores.mean()
+    cv_scores.append(mean_score)
+    
+    print(f"  n_components={n}: CV accuracy={mean_score:.4f} (+/- {scores.std():.4f})")
+    
+    if mean_score > best_score:
+        best_score = mean_score
+        best_n_components = n
+
+print(f"\nOptimal n_components based on cross-validation: {best_n_components} "
+      f"(CV accuracy: {best_score:.4f})")
+
+# Visualize cross-validation results
+plt.figure(figsize=(10, 6))
+plt.plot(list(n_components_range), cv_scores, marker='o', linestyle='-', linewidth=2)
+plt.xlabel('Number of PCA Components')
+plt.ylabel('Cross-Validation Accuracy')
+plt.title('Model Performance vs. Number of PCA Components')
+plt.grid(True, alpha=0.3)
+plt.axvline(x=best_n_components, color='r', linestyle='--', label=f'Optimal: {best_n_components} components')
+plt.legend()
+plt.show()
+
+# Use the optimal n_components from cross-validation
+optimal_n_components = best_n_components
+
+print(f"\n--- Final Selection ---")
+print(f"Using n_components={optimal_n_components} based on cross-validation optimization")
+print(f"This configuration achieves {best_score:.4f} CV accuracy and explains "
+      f"{cumsum_variance[optimal_n_components-1]:.2%} of the variance")
+
+# Apply PCA with the optimized n_components
+pca = PCA(n_components=optimal_n_components)
 x_train_pca = pca.fit_transform(x_train_scaled)
 x_test_pca = pca.transform(x_test_scaled)
 
-
-# ##### By studing above graph , 8 is the best number of components.
+print(f"\nPCA applied: {x_train_pca.shape[1]} components selected from {x_train_scaled.shape[1]} features")
 
 # ### Define Model
 
